@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Donut Chart with Multiple Languages</title>
+  <style>
+    :root {
+      /* Original colors */
+      --midnight-green: #005f73ff;
+      --dark-cyan: #0a9396ff;
+      --tiffany-blue: #94d2bdff;
+      --vanilla: #e9d8a6ff;
+      --gamboge: #ee9b00ff;
+      --alloy-orange: #ca6702ff;
+      --rust: #bb3e03ff;
+      --rufous: #ae2012ff;
+      --auburn: #9b2226ff;
+      
+      /* New colors */
+      --oxford-blue: #031d44ff;
+      --prussian-blue: #04395eff;
+      --cambridge-blue: #70a288ff;
+      --tan: #dab785ff;
+      --burnt-sienna: #d5896fff;
+      
+      /* Spacing color */
+      --spacing-color: white;
+    }
+
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 50px auto;
+    }
+
+    .donut-chart {
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      position: relative;
+      background: white; /* Fallback */
+      transition: background 0.5s ease;
+    }
+
+    .donut-chart::after {
+      content: "";
+      position: absolute;
+      top: 25%;
+      left: 25%;
+      width: 50%;
+      height: 50%;
+      background: white;
+      border-radius: 50%;
+    }
+
+    .legend {
+      margin-left: 30px;
+      list-style-type: none;
+      padding: 0;
+      min-width: 200px;
+    }
+
+    .legend li {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      margin-bottom: 10px;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .legend li::before {
+      content: "";
+      display: block;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      position: absolute;
+      left: 0;
+    }
+
+    .percentage {
+      margin-left: 5px;
+      font-weight: bold;
+    }
+
+    .controls {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .language-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .language-input {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      padding: 8px 16px;
+      background-color: var(--prussian-blue);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: var(--oxford-blue);
+    }
+
+    input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .remove-lang {
+      background-color: var(--burnt-sienna);
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .remove-lang:hover {
+      background-color: var(--rust);
+    }
+  </style>
+</head>
+<body>
+
+<div class="controls">
+  <h2>Configure Your Donut Chart</h2>
+  <div class="language-inputs" id="languageInputs">
+    <!-- Inputs will be added here dynamically -->
+  </div>
+  <button id="addLanguage">Add Language</button>
+</div>
+
+<div class="chart-container">
+  <div class="donut-chart" id="donutChart"></div>
+  <ul class="legend" id="chartLegend"></ul>
+</div>
+
+<script>
+  // Available color palette (now with 14 colors)
+  const colors = [
+    '--midnight-green', '--dark-cyan', '--tiffany-blue', '--vanilla', '--gamboge',
+    '--alloy-orange', '--rust', '--rufous', '--auburn',
+    '--oxford-blue', '--prussian-blue', '--cambridge-blue', '--tan', '--burnt-sienna'
+  ];
+
+  // Initial data
+  let languages = [
+    { name: 'Java', percentage: 20 },
+    { name: 'C', percentage: 15 },
+    { name: 'Python', percentage: 25 },
+    { name: 'C++', percentage: 10 },
+    { name: 'Go', percentage: 10 },
+    { name: 'JavaScript', percentage: 20 }
+  ];
+
+  // DOM elements
+  const languageInputs = document.getElementById('languageInputs');
+  const addLanguageBtn = document.getElementById('addLanguage');
+  const chart = document.getElementById('donutChart');
+  const legend = document.getElementById('chartLegend');
+
+  // Initialize the page
+  function initialize() {
+    renderInputs();
+    updateChart();
+  }
+
+  // Render input fields based on current languages
+  function renderInputs() {
+    languageInputs.innerHTML = '';
+    
+    languages.forEach((lang, index) => {
+      const div = document.createElement('div');
+      div.className = 'language-input';
+      
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Language';
+      nameInput.value = lang.name;
+      nameInput.dataset.index = index;
+      nameInput.className = 'lang-name';
+      
+      const percInput = document.createElement('input');
+      percInput.type = 'number';
+      percInput.placeholder = 'Percentage';
+      percInput.value = lang.percentage;
+      percInput.dataset.index = index;
+      percInput.className = 'lang-percentage';
+      percInput.min = 0;
+      percInput.max = 100;
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '×';
+      removeBtn.className = 'remove-lang';
+      removeBtn.dataset.index = index;
+      
+      // Add event listeners for real-time updates
+      nameInput.addEventListener('input', handleInputChange);
+      percInput.addEventListener('input', handleInputChange);
+      removeBtn.addEventListener('click', handleRemoveLanguage);
+      
+      div.appendChild(nameInput);
+      div.appendChild(percInput);
+      div.appendChild(removeBtn);
+      languageInputs.appendChild(div);
+    });
+  }
+
+  // Handle input changes
+  function handleInputChange(e) {
+    const index = parseInt(e.target.dataset.index);
+    if (e.target.classList.contains('lang-name')) {
+      languages[index].name = e.target.value || `Language ${index + 1}`;
+    } else if (e.target.classList.contains('lang-percentage')) {
+      languages[index].percentage = parseInt(e.target.value) || 0;
+    }
+    updateChart();
+  }
+
+  // Handle language removal
+  function handleRemoveLanguage(e) {
+    const index = parseInt(e.target.dataset.index);
+    languages.splice(index, 1);
+    renderInputs();
+    updateChart();
+  }
+
+  // Update the chart based on current data
+  // Update the chart based on current data
+function updateChart() {
+  // First validate the percentages
+  const totalPercentage = languages.reduce((sum, lang) => sum + parseInt(lang.percentage), 0);
+  
+  if (totalPercentage !== 100) {
+    normalizePercentages();
+  }
+  
+  // Generate the conic gradient with spacing
+  let cumulativePercentage = 0;
+  const gradientParts = [];
+  const spacingSize = 1; // Size of white space in percentage
+  
+  languages.forEach((lang, index) => {
+    const colorVar = colors[index % colors.length];
+    
+    // Add white space before each segment (including between last and first)
+    gradientParts.push(`var(--spacing-color) ${cumulativePercentage}% ${cumulativePercentage + spacingSize}%`);
+    cumulativePercentage += spacingSize;
+    
+    const start = cumulativePercentage;
+    const end = start + lang.percentage;
+    cumulativePercentage = end;
+    
+    gradientParts.push(`var(${colorVar}) ${start}% ${end}%`);
+  });
+  
+  // Add final white space to complete the circle
+  gradientParts.push(`var(--spacing-color) ${cumulativePercentage}% 100%`);
+  
+  // Apply the gradient with rounded corners effect
+  chart.style.background = `
+    conic-gradient(
+      ${gradientParts.join(', ')}
+    )
+  `;
+  
+  // Create rounded effect using multiple shadows
+  chart.style.boxShadow = `
+    inset 0 0 0 2px white,
+    inset 0 0 0 3px rgba(255,255,255,0.5)
+  `;
+  chart.style.borderRadius = '50%';
+  
+  // Update the legend
+  legend.innerHTML = '';
+  languages.forEach((lang, index) => {
+    const colorVar = colors[index % colors.length];
+    
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="lang-name">${lang.name}</span>
+      <span class="percentage">${lang.percentage}%</span>
+    `;
+    
+    // Add the bullet using a pseudo-element with the dynamic color
+    const style = document.createElement('style');
+    style.textContent = `
+      #chartLegend li:nth-child(${index + 1})::before {
+        background-color: var(${colorVar});
+        border-radius: 50%;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    legend.appendChild(li);
+  });
+}
+
+  // Normalize percentages to sum to 100
+  function normalizePercentages() {
+    const total = languages.reduce((sum, lang) => sum + parseInt(lang.percentage), 0);
+    if (total === 0) {
+      // If all are zero, distribute equally
+      const equalShare = Math.round(100 / languages.length);
+      languages = languages.map((lang, i) => ({
+        name: lang.name,
+        percentage: i === languages.length - 1 ? 100 - (equalShare * (languages.length - 1)) : equalShare
+      }));
+    } else {
+      // Normalize based on current values
+      languages = languages.map(lang => ({
+        name: lang.name,
+        percentage: Math.round((lang.percentage / total) * 100)
+      }));
+      
+      // Fix any rounding errors
+      const newTotal = languages.reduce((sum, lang) => sum + lang.percentage, 0);
+      if (newTotal !== 100) {
+        languages[0].percentage += (100 - newTotal);
+      }
+    }
+    
+    renderInputs();
+  }
+
+  // Add new language
+  addLanguageBtn.addEventListener('click', () => {
+    languages.push({ name: `Language ${languages.length + 1}`, percentage: 0 });
+    renderInputs();
+    updateChart();
+  });
+
+  // Initialize the page
+  initialize();
+</script>
+
+</body>
+</html>
